@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1"
+  >
+
+  <title>Ms. Batman's Lap Tracker</title>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 18px;
+      background: #f4f4f4;
+      color: #222;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 16px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+    }
+
+    #reader {
+      width: 100%;
+      overflow: hidden;
+      border-radius: 12px;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 12px;
+      background: #247a45;
+      color: white;
+    }
+
+    #status {
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      padding: 20px;
+      min-height: 80px;
+      border-radius: 12px;
+      background: #eeeeee;
+    }
+
+    .success {
+      background: #dff4e5 !important;
+      color: #155b2d;
+    }
+
+    .error {
+      background: #fde3e3 !important;
+      color: #8d1f1f;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🏃 Lap Tracker</h1>
+  <p class="subtitle">Ms. Batman's Class</p>
+
+  <div class="card">
+    <div id="reader"></div>
+
+    <button id="startButton">
+      📷 Start Camera
+    </button>
+  </div>
+
+  <div class="card">
+    <div id="status">
+      Ready to scan!
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let scanner;
+  let running = false;
+
+  const button = document.getElementById("startButton");
+  const status = document.getElementById("status");
+
+  button.addEventListener("click", startCamera);
+
+  async function startCamera() {
+
+    if (running) return;
+
+    button.disabled = true;
+    button.textContent = "Starting camera...";
+
+    scanner = new Html5Qrcode("reader");
+
+    try {
+
+      await scanner.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: {
+            width: 250,
+            height: 250
+          }
+        },
+        qrCodeMessage => {
+
+          status.textContent = "✅ SCANNED: " + qrCodeMessage;
+          status.className = "success";
+
+          if (navigator.vibrate) {
+            navigator.vibrate(100);
+          }
+        },
+        errorMessage => {
+          // Normal scanning misses are ignored.
+        }
+      );
+
+      running = true;
+
+      button.textContent = "✅ Camera Running";
+
+      status.textContent = "Show me a QR code!";
+      status.className = "";
+
+    } catch (error) {
+
+      console.error(error);
+
+      button.disabled = false;
+      button.textContent = "📷 Try Again";
+
+      status.textContent =
+        "Camera couldn't start: " + error;
+
+      status.className = "error";
+    }
+  }
+</script>
+
+</body>
+</html>
