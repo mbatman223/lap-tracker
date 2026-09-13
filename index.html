@@ -140,11 +140,11 @@
             height: 250
           }
         },
-      async qrCodeMessage => {
+    qrCodeMessage => {
 
-  if (navigator.vibrate) {
-    navigator.vibrate(100);
-  }
+  recordLap(qrCodeMessage);
+
+},
 
   status.textContent = "Counting...";
   status.className = "";
@@ -213,6 +213,87 @@
       status.className = "error";
     }
   }
+  const APPS_SCRIPT_URL =
+  "https://script.google.com/a/macros/thermalito.org/s/AKfycbxVfnXt1CmIFma89KsLd4SuZVBF_mOFLN6W6cIhwGPNoovHr6bSx25xLR2Zns2J8t6O/exec";
+
+let lastQr = "";
+let lastScanTime = 0;
+
+function recordLap(qrCodeMessage) {
+
+  const qrId = qrCodeMessage.trim().toUpperCase();
+  const now = Date.now();
+
+  if (
+    qrId === lastQr &&
+    now - lastScanTime < 8000
+  ) {
+    return;
+  }
+
+  lastQr = qrId;
+  lastScanTime = now;
+
+  status.textContent = "Counting " + qrId + "...";
+  status.className = "";
+
+  if (navigator.vibrate) {
+    navigator.vibrate(100);
+  }
+
+  const oldScript = document.getElementById("lapRequest");
+  if (oldScript) {
+    oldScript.remove();
+  }
+
+  const script = document.createElement("script");
+
+  script.id = "lapRequest";
+
+  script.src =
+    APPS_SCRIPT_URL +
+    "?qrId=" +
+    encodeURIComponent(qrId) +
+    "&callback=lapTrackerCallback" +
+    "&t=" +
+    Date.now();
+
+  script.onerror = function() {
+    status.textContent =
+      "Could not connect to Google Sheets.";
+    status.className = "error";
+  };
+
+  document.body.appendChild(script);
+}
+
+function lapTrackerCallback(result) {
+
+  if (result.success) {
+
+    status.textContent =
+      "✅ " +
+      result.name +
+      " — LAP " +
+      result.lapsToday +
+      "!";
+
+    status.className = "success";
+
+  } else if (result.duplicate) {
+
+    status.textContent =
+      "Already counted — keep running!";
+
+  } else {
+
+    status.textContent =
+      result.message ||
+      "That QR code was not recognized.";
+
+    status.className = "error";
+  }
+}
 </script>
 
 </body>
